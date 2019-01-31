@@ -1,5 +1,5 @@
 # Scripts for Smart Home
 
-# License
+## License
 
 MIT
