@@ -1,0 +1,44 @@
+#!/bin/sh
+# https://www.switch-bot.com
+
+set -eu
+
+if [ $# -ne 1 -a $# -ne 2 ]; then
+  echo "Usage: switchbot <address> [ON/OFF]"
+  echo
+  echo "  Turn on your switch  : switchbot XX:XX:XX:XX:XX:XX ON"
+  echo "  Turn off your switch : switchbot XX:XX:XX:XX:XX:XX OFF"
+  echo "  Read current state   : switchbot XX:XX:XX:XX:XX:XX"
+  echo "    This returns zero exit status when on."
+  exit 1
+fi
+
+basedir=$(cd $(dirname "$0")/..; pwd)
+address=$1
+
+if [ $# -ge 2 ]; then
+  op="WRITE"
+  if [ $2 = "ON" ]; then
+    data="570101"
+  elif [ $2 = "OFF" ]; then
+    data="570102"
+  else
+    echo "should be one of ON/OFF"
+    exit 1
+  fi
+else
+  op="READ"
+fi
+
+
+if [ ${op} = "WRITE" ]; then
+  command="gatttool -t random -b ${address} --char-write-req -a 0x0016 -n ${data}"
+else
+  command="gatttool -t random -b ${address} --char-read -a 0x0016"
+fi
+
+for i in 1 2 3 4 5; do output=$(${command}) && break || sleep 1; done
+
+if [ ${op} = "READ" ]; then
+  echo ${output} | grep "57 01 01"
+fi
