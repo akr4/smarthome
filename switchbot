@@ -1,5 +1,4 @@
 #!/bin/sh
-# https://www.switch-bot.com
 
 set -eu
 
@@ -9,7 +8,7 @@ if [ $# -ne 1 -a $# -ne 2 ]; then
   echo "  Turn on your switch  : switchbot XX:XX:XX:XX:XX:XX ON"
   echo "  Turn off your switch : switchbot XX:XX:XX:XX:XX:XX OFF"
   echo "  Read current state   : switchbot XX:XX:XX:XX:XX:XX"
-  echo "    This returns zero exit status when on."
+  echo "    This returns zero exit status and prints ON when on."
   exit 1
 fi
 
@@ -37,8 +36,16 @@ else
   command="gatttool -t random -b ${address} --char-read -a 0x0016"
 fi
 
-for i in 1 2 3 4 5; do output=$(${command}) && break || sleep 1; done
+for i in 1 2 3 4 5; do output=$(${command}) 2> /dev/null && break || sleep 1; done
 
 if [ ${op} = "READ" ]; then
-  echo ${output} | grep "57 01 01"
+  set +e
+  echo ${output} | grep "57 01 01" > /dev/null
+  if [ $? -eq 0 ]; then
+    echo "ON"
+    exit 0
+  else
+    exit 1
+  fi
+  set -e
 fi
